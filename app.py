@@ -4,20 +4,24 @@ import numpy as np
 
 app = Flask(__name__)
 
-# Charger le modèle
+# Charger le modèle une seule fois au démarrage
 with open("modele_random_forest.pkl", "rb") as f:
     model = pickle.load(f)
 
-@app.route("/", methods=["GET"])
+@app.route("/")
 def home():
-    return "Serveur IA opérationnel ✅"
+    return "Serveur IA actif"
 
 @app.route("/predict", methods=["POST"])
 def predict():
+    data = request.get_json()
+    if "features" not in data:
+        return jsonify({"error": "Paramètre 'features' manquant"}), 400
+    
     try:
-        data = request.json  # format attendu : {"features": [..]}
-        features = np.array(data["features"]).reshape(1, -1)
-        prediction = model.predict(features)[0]
-        return jsonify({"prediction": prediction})
+        features = np.array(data["features"]).reshape(1, -1)  # 1 ligne, N colonnes
+        prediction = model.predict(features)
+        return jsonify({"prediction": str(prediction[0])})
     except Exception as e:
-        return jsonify({"error": str(e)}), 400
+        return jsonify({"error": str(e)}), 500
+
